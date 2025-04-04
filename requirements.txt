@@ -17,6 +17,7 @@ ipykernel
 ipytho
 ipython_pygments_lexers
 jedi
+wandb
 Jinja2
 joblib
 jupyter_client
