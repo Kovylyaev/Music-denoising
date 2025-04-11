@@ -59,7 +59,7 @@ class Trainer:
             results[name] = func(true_spec, pred_spec).item()
         return results
 
-    def train_epoch(self, loader):
+    def __train_epoch(self, loader):
         """
         Выполняет обучение модели за одну эпоху.
         
@@ -109,18 +109,6 @@ class Trainer:
         return epoch_loss / len(loader), epoch_metrics
 
     def fit(self, train_loader, val_loader, num_epochs, save_best_path=None):
-        """
-        Запускает цикл обучения модели на заданное количество эпох.
-        
-        Args:
-            train_loader: DataLoader для обучающей выборки.
-            val_loader: DataLoader для валидационной выборки.
-            num_epochs (int): Количество эпох.
-            save_best_path (str, optional): Путь для сохранения лучшей модели.
-            
-        Returns:
-            dict: История потерь и метрик.
-        """
         best_val_loss = float("inf")
         train_losses = []
         val_losses = []
@@ -129,7 +117,7 @@ class Trainer:
 
         for epoch in range(num_epochs):
             start_time = time.time()
-            train_loss, train_metrics = self.train_epoch(train_loader)
+            train_loss, train_metrics = self.__train_epoch(train_loader)
             val_loss, val_metrics = self.evaluate_epoch(val_loader)
             end_time = time.time()
 
@@ -156,17 +144,9 @@ class Trainer:
             if self.scheduler is not None:
                 self.scheduler.step()
 
-                # Calculate average metrics for the epoch
-                avg_train_metrics = {
-                    k: np.mean([m[k] for m in train_metrics])
-                    for k in train_metrics[0].keys()
-                }
-                avg_val_metrics = {
-                    k: np.mean([m[k] for m in val_metrics])
-                    for k in val_metrics[0].keys()
-                }
-
                 if self.use_wandb:
+                    avg_train_metrics = {k: np.mean([m[k] for m in train_metrics]) for k in train_metrics[0].keys()}
+                    avg_val_metrics = {k: np.mean([m[k] for m in val_metrics]) for k in val_metrics[0].keys()}
                     log_data = {
                         "epoch": epoch,
                         "train_loss": train_loss,
@@ -182,3 +162,4 @@ class Trainer:
             "train_metrics": train_metrics_history,
             "val_metrics": val_metrics_history,
         }
+

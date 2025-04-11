@@ -1,0 +1,3 @@
+size: 500
+clean_dir: "../content/sample_data/Data/all_records"
+noise_dir: "../content/sample_data/Data/noise"

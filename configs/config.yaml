@@ -1,0 +1,10 @@
+defaults:
+  - _self_
+  - dataset: default
+  - model: default
+  - training: default
+
+project:
+  name: "Music_MMLS"
+  seed: 42
+  device: "cuda"
