@@ -4,7 +4,7 @@ import torchmetrics
 from Music_MMLS.metrics.metrics import SNR, LSD, SI_SNR
 from Music_MMLS.training.gets import get_model, get_optimizer, get_criterion, get_scheduler
 
-class MusicModel(L.LightningModule):
+class MusicModelModule(L.LightningModule):
     def __init__(self, model_config, training_config):
         """
             Инициализирует модель.
@@ -15,10 +15,10 @@ class MusicModel(L.LightningModule):
         """
         super().__init__()
 
-        self.model = get_model(model_config.model)()
-        self.optimizer = get_optimizer(training_config.optimizer)()
-        self.criterion = get_criterion(training_config.criterion)(self.model.parameters(), lr=training_config.learning_rate)
-        self.scheduler = get_scheduler(training_config.scheduler)()
+        self.model = get_model(model_config.model)(n_channels=model_config.n_channels)
+        self.optimizer = get_optimizer(training_config.optimizer)(self.model.parameters(), lr=training_config.learning_rate)
+        self.criterion = get_criterion(training_config.criterion)()
+        self.scheduler = get_scheduler(training_config.scheduler)(self.optimizer)
 
         self.train_metrics = torchmetrics.MetricCollection(
             {
@@ -79,11 +79,11 @@ class MusicModel(L.LightningModule):
     
     def configure_optimizers(self):
         """
-            Возвращает оптимизатор и планировщик скорости обучения
+        Возвращает оптимизатор и, если задан, планировщик скорости обучения.
         """
+        if self.scheduler is None:
+            return self.optimizer
         return {
-        "optimizer": self.optimizer,
-        "lr_scheduler": {
-            "scheduler": self.scheduler
+            "optimizer": self.optimizer,
+            "lr_scheduler": self.scheduler,
         }
-    }

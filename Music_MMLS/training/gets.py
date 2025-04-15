@@ -1,4 +1,5 @@
 from torch import nn, optim
+from torch.optim.lr_scheduler import StepLR
 
 from Music_MMLS.models.unet import UNet
 
@@ -18,7 +19,8 @@ optimizers = {
 }
 
 scheduler = {
-    '': lambda: None,
+    '': lambda x: None,
+    'StepLR': StepLR,
 }
 
 

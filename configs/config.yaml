@@ -8,3 +8,6 @@ project:
   name: "Music_MMLS"
   seed: 42
   device: "cuda"
+
+  wandb_entity: "sasha_kovylyaev-hse"
+  experiment_name: "default"
