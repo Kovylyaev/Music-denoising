@@ -1,24 +1,23 @@
-import os
+from pathlib import Path
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 
 class PostInstallCommand(install):
     def run(self):
         install.run(self)
+        cur_dir_path = Path.cwd()
         dirs_to_create = [
-            os.path.join(os.getcwd(), 'content'),
-            os.path.join(os.getcwd(), 'content', 'sample_data'),
-            os.path.join(os.getcwd(), 'content', 'sample_data', 'Data'),
-            os.path.join(os.getcwd(), 'content', 'sample_data', 'Data', 'all_records'),
-            os.path.join(os.getcwd(), 'content', 'sample_data', 'Data', 'noise'),
-            os.path.join(os.getcwd(), 'content', 'states'),
+            cur_dir_path.joinpath('content', 'sample_data', 'Data', 'all_records'),
+            cur_dir_path.joinpath('content', 'sample_data', 'Data', 'noise'),
+            cur_dir_path.joinpath('content', 'states'),
         ]
         for directory in dirs_to_create:
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-                print(f"Создана директория: {directory}")
+            if not Path(directory).exists():
+                Path(directory).mkdir(parents=True)
+                print(f"✅ Создана директория: {directory}")
             else:
-                print(f"Директория уже существует: {directory}")
+                print(f"ℹ️ Директория уже существует: {directory}")
+
 
 # Загружаем зависимости из requirements.txt
 with open('requirements.txt', encoding='utf-8') as f:

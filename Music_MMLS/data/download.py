@@ -1,8 +1,10 @@
 import os
-import math
-import shutil
-from pydub import AudioSegment
 import kagglehub
+import math
+from pathlib import Path
+from pydub import AudioSegment
+import shutil
+import sys
 
 def download_data(dataset_path, out_path, dataset_path_add=None, audio_duration=None):
     """
@@ -14,6 +16,10 @@ def download_data(dataset_path, out_path, dataset_path_add=None, audio_duration=
         dataset_path_add (str, optional): Дополнительный путь внутри скачанного архива.
         audio_duration (int, optional): Длительность аудио (в секундах) для разбиения файла.
     """
+    if os.listdir(out_path):
+        print(f'ℹ️ Папка {out_path} не пуста, возможно, датасет уже там')
+        return
+
     path = kagglehub.dataset_download(dataset_path)
     path = shutil.move(path, 'content/sample_data/temp_Data')
 
@@ -42,3 +48,5 @@ def download_data(dataset_path, out_path, dataset_path_add=None, audio_duration=
     broken_file = 'content/sample_data/Data/all_records/jazz.00054.wav'
     if os.path.exists(broken_file):
         os.remove(broken_file)
+
+    print(f'✅ Датасет {dataset_path} успешно скачан')

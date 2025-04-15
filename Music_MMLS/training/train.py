@@ -1,11 +1,14 @@
+from IPython.display import clear_output
+import lightning as L
+import numpy as np
+import pandas as pd
 import time
 import torch
-import pandas as pd
 from tqdm import tqdm
-from IPython.display import clear_output
-import numpy as np
 import wandb
+
 from Music_MMLS.metrics.metrics import snr, lsd, si_snr
+
 
 class Trainer:
     def __init__(self, model, optimizer, criterion, scheduler=None,

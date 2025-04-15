@@ -1,5 +1,8 @@
 epochs: 10
 learning_rate: 0.001
 batch_size: 4
+precision: 32
+
 optimizer: "Adam"
-loss_fn: "MSELoss"
+criterion: "MSE"
+scheduler: ""

@@ -1,2 +1,2 @@
-name: "UNet"
+model: "UNet"
 n_channels: 1
