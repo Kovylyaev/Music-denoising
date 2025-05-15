@@ -1,40 +1,79 @@
-import lightning as L
-from pathlib import Path
-from torch.utils.data import random_split, DataLoader
+import os
+import torch
+from torch.utils.data import DataLoader
+from pytorch_lightning import LightningDataModule
+from .dataset import Music_Dataset
+from .sampler import AccedingSequenceLengthBatchSampler
+from .collate_fn import collate_fn
+from .download import download_data
 
-from Music_MMLS.data.download import download_data
-from Music_MMLS.data.dataset import Music_Dataset
-
-
-class MusicDataModule(L.LightningDataModule):
-    def __init__(self, cfg, batch_size):
+class MusicDataModule(LightningDataModule):
+    def __init__(
+        self,
+        data_dir: str = "data/",
+        batch_size: int = 32,
+        num_workers: int = 0,
+        pin_memory: bool = False,
+        size: int = 1000,
+    ):
         super().__init__()
-        self.data_dir = Path(cfg.data_dir)
-        self.clean_data_dir = Path(cfg.clean_dir)
-        self.noise_data_dir = Path(cfg.noise_dir)
-        self.dataset_size = cfg.size
-        self.test_size = cfg.test_size
+        self.data_dir = data_dir
         self.batch_size = batch_size
-        # self.transform
+        self.num_workers = num_workers
+        self.pin_memory = pin_memory
+        self.size = size
+
+        self.train_dataset = None
+        self.val_dataset = None
+        self.test_dataset = None
 
     def prepare_data(self):
-        # download
-        download_data(dataset_path="andradaolteanu/gtzan-dataset-music-genre-classification", out_path=self.clean_data_dir, dataset_path_add='Data/genres_original')
-        download_data(dataset_path="mlneo07/random-noise-audio", out_path=self.noise_data_dir, audio_duration=30)
+        download_data(self.data_dir)
 
-    def setup(self, stage: str):
-        # Assign train/test datasets for use in dataloaders
-        train_clean_data, test_clean_data = random_split(list(self.clean_data_dir.iterdir()), [1 - self.test_size, self.test_size])
-        train_noise_data, test_noise_data = random_split(list(self.noise_data_dir.iterdir()), [1 - self.test_size, self.test_size])
+    def setup(self, stage=None):
+        if stage == "fit" or stage is None:
+            clean_files = [os.path.join(self.data_dir, "clean", f) for f in os.listdir(os.path.join(self.data_dir, "clean"))]
+            noise_files = [os.path.join(self.data_dir, "noise", f) for f in os.listdir(os.path.join(self.data_dir, "noise"))]
+            
+            # Split files for train and validation
+            train_size = int(0.8 * len(clean_files))
+            train_clean = clean_files[:train_size]
+            val_clean = clean_files[train_size:]
+            
+            train_noise = noise_files[:train_size]
+            val_noise = noise_files[train_size:]
+            
+            self.train_dataset = Music_Dataset(self.size, train_clean, train_noise)
+            self.val_dataset = Music_Dataset(self.size // 5, val_clean, val_noise)
 
-        self.train_dataset = Music_Dataset(size=self.dataset_size, clean_files=train_clean_data, noise_files=train_noise_data)
-        self.test_dataset = Music_Dataset(size=self.dataset_size, clean_files=test_clean_data, noise_files=test_noise_data)
+        if stage == "test" or stage is None:
+            clean_files = [os.path.join(self.data_dir, "clean", f) for f in os.listdir(os.path.join(self.data_dir, "clean"))]
+            noise_files = [os.path.join(self.data_dir, "noise", f) for f in os.listdir(os.path.join(self.data_dir, "noise"))]
+            self.test_dataset = Music_Dataset(self.size // 10, clean_files, noise_files)
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=4)
+        return DataLoader(
+            self.train_dataset,
+            batch_sampler=AccedingSequenceLengthBatchSampler(self.train_dataset, self.batch_size),
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            collate_fn=collate_fn,
+        )
+
+    def val_dataloader(self):
+        return DataLoader(
+            self.val_dataset,
+            batch_sampler=AccedingSequenceLengthBatchSampler(self.val_dataset, self.batch_size),
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            collate_fn=collate_fn,
+        )
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=4)
-
-    def predict_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=4)
+        return DataLoader(
+            self.test_dataset,
+            batch_sampler=AccedingSequenceLengthBatchSampler(self.test_dataset, self.batch_size),
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            collate_fn=collate_fn,
+        )

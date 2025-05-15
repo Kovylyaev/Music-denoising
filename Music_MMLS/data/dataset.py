@@ -37,31 +37,18 @@ class Music_Dataset(torch.utils.data.Dataset):
         Returns:
             Tuple: (запись с шумом, чистая запись) после необходимых преобразований.
         """
-        # musc_ind = torch.randint(low=0, high=self.clean_num, size=(1,))
-        musc_ind = torch.randint(low=0, high=self.clean_num, size=(1,)).item()
+        musc_ind = idx % (self.size // 10)
 
         clean_record, sample_rate_clean = torchaudio.load(self.clean_music[musc_ind])
         
-        noise_ind = torch.randint(low=0, high=self.noise_num, size=(1,))
+        noise_ind = idx % 10
         noise_record, sample_rate_noise = torchaudio.load(self.noise[noise_ind])
         
         # Приведение частоты дискретизации
-        clean_record = resample(clean_record, orig_freq=sample_rate_clean, new_freq=sample_rate_clean)
-        noise_record = resample(noise_record, orig_freq=sample_rate_noise, new_freq=sample_rate_noise)
+        clean_record = resample(clean_record, orig_freq=sample_rate_clean, new_freq=16000)
+        noise_record = resample(noise_record, orig_freq=sample_rate_noise, new_freq=16000)
         
-        clean_record = pad(clean_record, max_len=16000 * 30, val=0)
-        noise_record = pad(noise_record, max_len=16000 * 30, val=0)
-        
-        record_with_noise = clamp(clean_record + noise_record, min=-1, max=1)
-        
-        # Функция do_db_mel_spec и transform также должна быть определена отдельно
-        db_melspec_with_noise = do_db_mel_spec(record_with_noise, sample_rate_clean)
-        db_melspec_clean = do_db_mel_spec(clean_record, sample_rate_clean)
-        
-        with_noise = transform(db_melspec_with_noise)
-        clean = transform(db_melspec_clean)
-        
-        return with_noise, clean
+        return noise_record, clean_record
 
     def __len__(self):
         """

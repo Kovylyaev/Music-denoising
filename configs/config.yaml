@@ -11,3 +11,8 @@ project:
 
   wandb_entity: "sasha_kovylyaev-hse"
   experiment_name: "default"
+  wandb:
+    api_key: ${env:WANDB_API_KEY}
+    project: ${project.name}
+    entity: ${project.wandb_entity}
+    name: ${project.experiment_name}
